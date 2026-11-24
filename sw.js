@@ -1,6 +1,6 @@
 /* Boltrush offline support: the game and its 3D engine are saved on the device. The page itself is fetched fresh when online (network first). */
-const CACHE = 'boltrush-v2';
-const CORE = ['./', 'index.html', 'manifest.webmanifest', 'boltrush-192.png', 'boltrush-512.png', 'boltrush-touch.png', 'ninebolt-icon-round.png', 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
+const CACHE = 'boltrush-v3';
+const CORE = ['./', 'index.html', 'manifest.webmanifest', 'boltrush-192.png', 'boltrush-512.png', 'boltrush-touch.png', 'ninebolt-icon-round.png', 'ninebolt-dark.png', 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('boltrush-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
