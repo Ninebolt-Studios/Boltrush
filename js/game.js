@@ -28,7 +28,7 @@ const TRACKS = {
   frost:  { n: 'Frost Peak', d: 'Snowy mountain pass', sky: 0xbcd0e6, fog: 0xd6e2ee, ground: 0xe8eef4, light: 1.0, sun: 1.3, road: '#3a3e46', edge: 0xff4f6d, scen: 'snow', hills: true,
             pts: [[0,0],[110,20],[190,-30],[260,20],[250,120],[170,170],[120,110],[40,150],[-40,220],[-140,190],[-150,100],[-90,60],[-170,-10],[-120,-80],[-30,-60]] },
 };
-const MODES = { race: { n: 'Race', d: '7 rivals · 3 laps' }, trial: { n: 'Time Trial', d: 'Solo · beat your best' }, tut: { n: 'Tutorial', d: 'Learn the moves · ◎ 250' } };
+const MODES = { race: { n: 'Race', d: '7 rivals · 3 laps' }, trial: { n: 'Time Trial', d: 'Solo · race your 👻 ghost' }, tut: { n: 'Tutorial', d: 'Learn the moves · ◎ 250' } };
 const RIVALS = ['Blaze', 'Nova', 'Jinx', 'Rook', 'Vex', 'Kira', 'Dash', 'Moss', 'Echo', 'Zed'];
 const LAPS = 3, HALFW = 7.5;
 
@@ -288,7 +288,7 @@ function startRace() {
   if (SAVE.mode === 'race') { const names = RIVALS.slice().sort(() => Math.random() - 0.5); const keys = Object.keys(CARS);
     for (let i = 0; i < 7; i++) racers.push(newRacer(names[i], CARS[keys[i % keys.length]], PAINTS[(i + 1 + SAVE.paint) % PAINTS.length], true, i)); }
   R = { racers, me, t: tut ? -2.5 : -3.5, done: false, fin: 0, dScore: 0, dMul: 1, dT: 0, dIdle: 0, driftBank: 0, dShowT: 0, smash: 0, tut: tut ? { i: 0, p: 0, started: false } : null };
-  clearFx(); $('tutBox').classList.toggle('hide', !tut); $('hItem').classList.add('hide'); $('drift').textContent = ''; $('hLap').style.visibility = tut ? 'hidden' : ''; $('big').textContent = '';
+  clearFx(); setupGhost(); $('tutBox').classList.toggle('hide', !tut); $('hItem').classList.add('hide'); $('drift').textContent = ''; $('hLap').style.visibility = tut ? 'hidden' : ''; $('big').textContent = '';
   state = 'race'; $('menu').classList.add('hide'); $('hud').classList.remove('hide'); if (isTouch) $('touch').classList.remove('hide');
   $('resOv').classList.add('hide'); $('pauseOv').classList.add('hide');
   audio(); camSnap = true;
@@ -344,7 +344,7 @@ function stepCar(c, dt, ctl) {
   // laps
   const prev = c.prevSi == null ? c.si : c.prevSi; c.prevSi = c.si;
   if (Math.abs(c.si - TR.N / 2) < 20) c.half = true;
-  if (prev > TR.N - 40 && c.si < 40 && c.half) { c.half = false; c.lap++; const lt = R.t - c.lapStart; if (c.lap > 1 && lt > 5) c.bestLap = c.bestLap ? Math.min(c.bestLap, lt) : lt; c.lapStart = R.t; }
+  if (prev > TR.N - 40 && c.si < 40 && c.half) { c.half = false; c.lap++; const lt = R.t - c.lapStart; if (c === R.me) ghostLap(c.lap, lt); if (c.lap > 1 && lt > 5) c.bestLap = c.bestLap ? Math.min(c.bestLap, lt) : lt; c.lapStart = R.t; }
   c.prog = c.lap * TR.N + c.si;
   // visuals
   c.v.g.position.set(c.x, c.y, c.z); c.v.g.rotation.y = c.yaw + c.spinA + (c.drifting ? -ctl.steer * 0.25 : 0); c.v.g.rotation.x = c.air ? clamp(-c.vy * 0.025, -0.35, 0.35) : 0;
@@ -364,7 +364,7 @@ function stepCar(c, dt, ctl) {
 function landed(c, near) {
   if (near) burst(sparks, c.x, c.y + 0.2, c.z, c.airT > 0.6 ? 16 : 6, 9, 4, 0.4);
   if (c !== R.me) return; R.airHit = true;
-  if (c.airT > 0.65) { c.nitro = Math.min(1, c.nitro + 0.25); R.driftBank += 300; shake = 0.45; thud(); toast('🚀 BIG AIR! +NITRO'); } else shake = 0.2;
+  if (c.airT > 0.65) { META.bump('bigair'); c.nitro = Math.min(1, c.nitro + 0.25); R.driftBank += 300; shake = 0.45; thud(); toast('🚀 BIG AIR! +NITRO'); } else shake = 0.2;
 }
 function spinOut(c, dur, fromItem) {
   if (c.shieldT > 0) { if (fromItem) c.shieldT = 0; return false; }
@@ -383,7 +383,7 @@ function useItem(c) {
   else if (it === 'shield') { c.shieldT = 7; if (c === R.me) { tone(520, 0.3, 'sine', 0.15); toast('🛡️ SHIELD UP'); } }
   else { let tgt = null, bd = 1e9;
     for (const o of R.racers) { if (o === c || o.finished) continue; const d = o.prog - c.prog, sc = d > 0 ? d : 40 - d * 3; if (Math.abs(d) < TR.N * 0.4 && sc < bd) { bd = sc; tgt = o; } }
-    if (tgt) { const hit = spinOut(tgt, 1.3, true); for (let k = 0; k < 40; k++) zap.emit(tgt.x + (Math.random() - .5) * 2, tgt.y + 0.3 + Math.random() * 2.5, tgt.z + (Math.random() - .5) * 2, (Math.random() - .5) * 8, Math.random() * 6, (Math.random() - .5) * 8, 0.5 + Math.random() * 0.4);
+    if (tgt) { const hit = spinOut(tgt, 1.3, true); if (hit && c === R.me) META.bump('shocks'); for (let k = 0; k < 40; k++) zap.emit(tgt.x + (Math.random() - .5) * 2, tgt.y + 0.3 + Math.random() * 2.5, tgt.z + (Math.random() - .5) * 2, (Math.random() - .5) * 8, Math.random() * 6, (Math.random() - .5) * 8, 0.5 + Math.random() * 0.4);
       if (c === R.me) toast(hit ? '⚡ SHOCKED ' + tgt.name.toUpperCase() + '!' : '🛡️ ' + tgt.name + ' blocked it'); else if (tgt === R.me) toast(hit ? '⚡ ' + c.name.toUpperCase() + ' SHOCKED YOU!' : '🛡️ BLOCKED ' + c.name.toUpperCase() + '!');
       if (c === R.me || tgt === R.me) tone(1200, 0.25, 'sawtooth', 0.07); }
     else if (c === R.me) toast('⚡ nobody close enough'); }
@@ -455,13 +455,13 @@ function stepRace(dt) {
     if (c === me) R.meVf = vf;
   }
   collideCars();
-  stepWorldBits(dt);
+  stepWorldBits(dt); stepGhost(dt);
   // drift score combo
   if (racing && !me.finished) {
     if (me.drifting && Math.abs(me.vl) > 2.5) { R.dT += dt; R.dIdle = 0; R.dScore += Math.abs(me.vl) * dt * 22 * R.dMul; if (R.dT > 1.4 * R.dMul && R.dMul < 5) { R.dMul++; tone(500 + R.dMul * 120, 0.08, 'triangle', 0.08); } }
     else if (R.dScore > 0) { R.dIdle += dt;
       if (me.wallT > 0.35) { R.dShowTxt = 'DRIFT LOST'; R.dShowT = 1; R.dScore = 0; R.dMul = 1; R.dT = 0; }
-      else if (R.dIdle > 0.6) { const n = Math.round(R.dScore); R.driftBank += n; R.dShowTxt = '+' + n.toLocaleString() + (n > 2500 ? ' INSANE DRIFT!' : n > 1000 ? ' GREAT DRIFT' : ''); R.dShowT = 1.2; R.dScore = 0; R.dMul = 1; R.dT = 0; } } }
+      else if (R.dIdle > 0.6) { const n = Math.round(R.dScore); R.driftBank += n; if (n >= 2000) META.unlock('drift'); R.dShowTxt = '+' + n.toLocaleString() + (n > 2500 ? ' INSANE DRIFT!' : n > 1000 ? ' GREAT DRIFT' : ''); R.dShowT = 1.2; R.dScore = 0; R.dMul = 1; R.dT = 0; } } }
   R.dShowT = Math.max(0, R.dShowT - dt);
   const dtxt = R.dScore > 0 ? Math.round(R.dScore).toLocaleString() + (R.dMul > 1 ? ' ×' + R.dMul : '') + '<small>DRIFT</small>' : R.dShowT > 0 ? R.dShowTxt : '';
   if (dtxt !== R.dLast) { $('drift').innerHTML = dtxt; R.dLast = dtxt; }
@@ -494,7 +494,7 @@ function stepWorldBits(dt) {
     for (const c of R.racers) { if ((c.x - p.x) ** 2 + (c.z - p.z) ** 2 > p.r * p.r || c.y - p.hy > 1.5) continue; const spd = Math.hypot(c.vx, c.vz); if (spd < 3) continue;
       p.live = true; p.t = 0; p.vx = c.vx * 1.15 + (Math.random() - .5) * 5; p.vz = c.vz * 1.15 + (Math.random() - .5) * 5; p.vy = 4 + spd * 0.18; p.wx = (Math.random() - .5) * 14; p.wz = (Math.random() - .5) * 14;
       const k = p.heavy ? 0.88 : 0.97; c.vx *= k; c.vz *= k;
-      if (c === R.me) { tone(p.heavy ? 90 : 200, 0.12, 'triangle', 0.18); R.smash++; if (p.heavy) { shake = Math.max(shake, 0.25); burst(sparks, p.x, p.y, p.z, 10, 8, 5, 0.4); } }
+      if (c === R.me) { tone(p.heavy ? 90 : 200, 0.12, 'triangle', 0.18); R.smash++; META.bump('cones'); if (p.heavy) { shake = Math.max(shake, 0.25); burst(sparks, p.x, p.y, p.z, 10, 8, 5, 0.4); } }
       break; } }
   for (const b of TR.boxes) {
     if (b.t > 0) { b.t -= dt; b.m.visible = b.t < 0.5; b.m.scale.setScalar(clamp(1 - b.t * 2, 0.01, 1)); continue; }
@@ -533,7 +533,7 @@ function finishRace() {
   const me = R.me, place = me.place, trial = SAVE.mode === 'trial';
   if (R.dScore > 0) { R.driftBank += Math.round(R.dScore); R.dScore = 0; }
   const dc = Math.min(200, Math.floor(R.driftBank / 150)), earn = (trial ? 40 : [0, 300, 200, 150, 80, 60, 50, 40, 30][place] || 30) + dc; SAVE.coins += earn; if (!trial && place === 1) SAVE.wins++;
-  const key = SAVE.track; const newBest = !SAVE.best[key] || me.time < SAVE.best[key]; if (newBest) SAVE.best[key] = me.time; if (me.bestLap && (!SAVE.bestLap[key] || me.bestLap < SAVE.bestLap[key])) SAVE.bestLap[key] = me.bestLap; save();
+  const key = SAVE.track; const newBest = !SAVE.best[key] || me.time < SAVE.best[key]; if (newBest) SAVE.best[key] = me.time; if (me.bestLap && (!SAVE.bestLap[key] || me.bestLap < SAVE.bestLap[key])) SAVE.bestLap[key] = me.bestLap; SAVE.stats.races++; if (!SAVE.stats.tracks.split(',').includes(key)) SAVE.stats.tracks += (SAVE.stats.tracks ? ',' : '') + key; save(); META.check();
   $('big').textContent = trial ? 'FINISH' : placeOrdinal(place) + '!';
   setTimeout(() => {
     if (!R) return; const list = $('resList'); list.textContent = '';
@@ -601,6 +601,7 @@ function pollPad() {
 
 /* ---------- menu ---------- */
 function renderMenu() {
+  if (window.__META) window.__META.renderDaily();
   $('mCoins').textContent = '◎ ' + SAVE.coins.toLocaleString(); $('tutCard').classList.toggle('hide', !!SAVE.tutDone);
   const tl = $('trackList'); tl.textContent = '';
   for (const [k, t] of Object.entries(TRACKS)) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (SAVE.track === k ? ' on' : ''); b.innerHTML = '<span></span><small></small>'; b.children[0].textContent = t.n; b.children[1].textContent = t.d; b.onclick = () => { SAVE.track = k; save(); buildTrack(k); renderMenu(); }; tl.appendChild(b); }
@@ -611,7 +612,7 @@ function renderMenu() {
   for (const [k, c] of Object.entries(CARS)) { const own = SAVE.cars.includes(k), b = document.createElement('button'); b.type = 'button'; b.className = 'car' + (SAVE.car === k ? ' on' : '');
     b.innerHTML = '<b></b><small></small><div class="bars">' + [['Speed', c.top / mx.top], ['Accel', c.acc / mx.acc], ['Grip', c.grip / mx.grip], ['Drift', c.drift / mx.drift]].map(([n, v]) => '<span>' + n + '</span><i><b style="width:' + Math.round(v * 100) + '%"></b></i>').join('') + '</div>';
     b.children[0].textContent = c.n; b.children[1].textContent = own ? c.d : '🔒 ◎ ' + c.price.toLocaleString() + ' · ' + c.d;
-    b.onclick = () => { if (!own) { if (SAVE.coins < c.price) { toastMenu('Need ◎ ' + (c.price - SAVE.coins).toLocaleString() + ' more · win races to earn coins'); return; } SAVE.coins -= c.price; SAVE.cars.push(k); } SAVE.car = k; save(); renderMenu(); showGarageCar(); };
+    b.onclick = () => { if (!own) { if (SAVE.coins < c.price) { toastMenu('Need ◎ ' + (c.price - SAVE.coins).toLocaleString() + ' more · win races to earn coins'); return; } SAVE.coins -= c.price; SAVE.cars.push(k); META.check(); } SAVE.car = k; save(); renderMenu(); showGarageCar(); };
     cl.appendChild(b); }
   const pl = $('paintList'); pl.textContent = '';
   PAINTS.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sw' + (SAVE.paint === i ? ' on' : ''); b.style.background = '#' + p.toString(16).padStart(6, '0'); b.setAttribute('aria-label', 'Paint ' + (i + 1)); b.onclick = () => { SAVE.paint = i; save(); renderMenu(); showGarageCar(); }; pl.appendChild(b); });
@@ -651,10 +652,11 @@ function cloudInit() {
 function acUI() { const u = CLOUD.user; $('acOut').classList.toggle('hide', !!u); $('acInBox').classList.toggle('hide', !u);
   if (u) $('acWho').textContent = 'Signed in as ' + u.email + (SAVE.cloudAt ? ' · saved ' + new Date(SAVE.cloudAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''); }
 // combine two saves without ever losing anything: every car owned on either, best times, most coins and wins
-const PROG = ['coins', 'cars', 'best', 'bestLap', 'wins', 'tutDone'];
+const PROG = ['coins', 'cars', 'best', 'bestLap', 'wins', 'tutDone', 'ach'];
 function mergeSave(a, b) {
   const m = { coins: Math.max(+a.coins || 0, +b.coins || 0), wins: Math.max(+a.wins || 0, +b.wins || 0), tutDone: !!(a.tutDone || b.tutDone), cars: [...new Set([...(a.cars || []), ...(b.cars || [])])].filter(k => CARS[k]), best: {}, bestLap: {} };
   for (const f of ['best', 'bestLap']) for (const o of [a[f] || {}, b[f] || {}]) for (const k in o) if (o[k] > 0 && (!m[f][k] || o[k] < m[f][k])) m[f][k] = o[k];
+  m.ach = Object.assign({}, b.ach || {}, a.ach || {});
   if (!m.cars.includes('volt')) m.cars.unshift('volt'); return m;
 }
 const progKey = o => JSON.stringify(PROG.map(k => o[k]));
@@ -758,6 +760,119 @@ $('admLeave').onclick = () => { delete SAVE.admin; save(); renderAdmin(); $('cod
 applySettings();
 $('gfxBtn').onclick = () => { SAVE.gfx = gfxHi() ? 'fast' : 'high'; save(); gfxLabel(); resize(); GFX.slowT = 0; GFX.avg = 1 / 60; setupBloom(); };
 gfxLabel(); setTimeout(setupBloom, 300);
+/* ---------- achievements list ---------- */
+const STAT_DEFAULTS = { races: 0, cones: 0, shocks: 0, bigair: 0, tracks: '', dailies: 0 };
+const ACH = [
+  { id: 'race1', ico: '🏁', n: 'Off the line', d: 'Finish your first race', r: 50, goal: 1, val: () => SAVE.stats.races },
+  { id: 'win1', ico: '🏆', n: 'Top step', d: 'Win a race', r: 100, goal: 1, val: () => SAVE.wins },
+  { id: 'win10', ico: '👑', n: 'Champion', d: 'Win 10 races', r: 400, goal: 10, val: () => SAVE.wins },
+  { id: 'drift', ico: '💨', n: 'Sideways', d: 'Bank a 2,000-point drift', r: 150 },
+  { id: 'air', ico: '🚀', n: 'Big air', d: 'Land a BIG AIR jump', r: 75, goal: 1, val: () => SAVE.stats.bigair },
+  { id: 'cones', ico: '🧡', n: 'Cone collector', d: 'Smash 25 cones or barrels', r: 100, goal: 25, val: () => SAVE.stats.cones },
+  { id: 'shock', ico: '⚡', n: 'Shocker', d: 'Shock 10 rivals with items', r: 150, goal: 10, val: () => SAVE.stats.shocks },
+  { id: 'tour', ico: '🗺️', n: 'World tour', d: 'Finish a race on all 3 tracks', r: 200, goal: 3, val: () => SAVE.stats.tracks.split(',').filter(Boolean).length },
+  { id: 'ghost', ico: '👻', n: 'Beat yourself', d: 'Beat your own ghost in Time Trial', r: 150 },
+  { id: 'garage', ico: '🚗', n: 'Full garage', d: 'Own all 4 cars', r: 500, goal: 4, val: () => SAVE.cars.length },
+  { id: 'daily7', ico: '📅', n: 'Regular', d: 'Claim 7 daily rewards', r: 200, goal: 7, val: () => SAVE.stats.dailies },
+];
+/* ---------- daily rewards + achievements (shared Ninebolt design) ---------- */
+const META = (() => {
+  const DAILY = [50, 75, 100, 150, 200, 250, 400];
+  const dayKey = (d = new Date()) => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  SAVE.daily = Object.assign({ last: '', streak: 0 }, SAVE.daily || {});
+  SAVE.ach = SAVE.ach || {};
+  SAVE.stats = Object.assign({}, STAT_DEFAULTS, SAVE.stats || {});
+  const css = document.createElement('style');
+  css.textContent = `
+    .achpop { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 6px); transform: translate(-50%, -140%); z-index: 9000; display: flex; gap: 12px; align-items: center; padding: 10px 16px 10px 12px; border-radius: 14px; background: rgba(14,15,22,.94); border: 1px solid rgba(255,210,63,.6); box-shadow: 0 12px 40px rgba(0,0,0,.5); transition: transform .45s cubic-bezier(.2,.9,.25,1.2); pointer-events: none; max-width: calc(100vw - 24px); }
+    .achpop.show { transform: translate(-50%, 0); }
+    .achpop i { font-style: normal; font-size: 30px; } .achpop b { display: block; font: 800 11px system-ui; letter-spacing: .18em; color: #ffd23f; } .achpop span { font: 800 15px system-ui; color: #fff; } .achpop small { display: block; color: rgba(255,255,255,.6); font: 600 12px system-ui; }
+    .achlist { display: grid; gap: 6px; margin: 8px 0 12px; max-height: 58vh; overflow-y: auto; }
+    .achrow { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.04); }
+    .achrow i { font-style: normal; font-size: 24px; text-align: center; filter: grayscale(1); opacity: .45; } .achrow.done i { filter: none; opacity: 1; }
+    .achrow b { display: block; font-size: 14px; } .achrow small { color: rgba(255,255,255,.6); font-size: 12px; } .achrow em { font-style: normal; font-weight: 800; font-size: 13px; color: rgba(255,255,255,.5); white-space: nowrap; } .achrow.done em { color: #6aff7a; }
+    .achbar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 4px; } .achbar u { display: block; height: 100%; background: #ffd23f; }
+    .dailyrow { display: flex; gap: 5px; margin: 8px 0 10px; } .dailyrow div { flex: 1; text-align: center; padding: 6px 2px; border-radius: 8px; background: rgba(255,255,255,.05); font: 800 11px system-ui; color: rgba(255,255,255,.55); }
+    .dailyrow div.got { background: rgba(106,255,122,.14); color: #6aff7a; } .dailyrow div.now { background: rgba(255,210,63,.2); color: #ffd23f; outline: 1px solid #ffd23f; }`;
+  document.head.appendChild(css);
+
+  // achievement popup
+  const pop = document.createElement('div'); pop.className = 'achpop'; pop.innerHTML = '<i></i><div><b>ACHIEVEMENT UNLOCKED</b><span></span><small></small></div>'; document.body.appendChild(pop);
+  const queue = []; let busy = false;
+  function showNext() { if (busy || !queue.length) return; busy = true; const a = queue.shift(); pop.children[0].textContent = a.ico; pop.querySelector('span').textContent = a.n; pop.querySelector('small').textContent = a.d + ' · +◎ ' + a.r;
+    requestAnimationFrame(() => pop.classList.add('show')); try { tone(784, 0.12, 'triangle', 0.12); setTimeout(() => tone(1175, 0.2, 'triangle', 0.12), 110); } catch (e) {}
+    setTimeout(() => { pop.classList.remove('show'); setTimeout(() => { busy = false; showNext(); }, 500); }, 3000); }
+  function unlock(id) { const a = ACH.find(x => x.id === id); if (!a || SAVE.ach[id]) return; SAVE.ach[id] = Date.now(); SAVE.coins += a.r; save(); queue.push(a); showNext(); try { if (state === 'menu') renderMenu(); } catch (e) {} }
+  function check() { for (const a of ACH) if (!SAVE.ach[a.id] && a.goal && a.val() >= a.goal) unlock(a.id); }
+  function bump(stat, n = 1) { SAVE.stats[stat] = (SAVE.stats[stat] || 0) + n; check(); }
+
+  // achievements overlay
+  const ov = document.createElement('div'); ov.className = 'ov hide'; ov.id = 'achOv'; ov.style.zIndex = 45;
+  ov.innerHTML = '<div class="card"><h3>🏆 Achievements</h3><div class="best" id="achSum"></div><div class="achlist" id="achList"></div><button class="go" type="button" id="achClose">Done</button></div>';
+  document.body.appendChild(ov); ov.querySelector('#achClose').onclick = () => ov.classList.add('hide'); ov.addEventListener('click', e => { if (e.target === ov) ov.classList.add('hide'); });
+  function openList() {
+    const list = ov.querySelector('#achList'); list.textContent = ''; let done = 0;
+    for (const a of ACH) { const got = !!SAVE.ach[a.id]; if (got) done++; const row = document.createElement('div'); row.className = 'achrow' + (got ? ' done' : '');
+      const prog = !got && a.goal > 1 ? Math.min(1, a.val() / a.goal) : 0;
+      row.innerHTML = '<i></i><div><b></b><small></small>' + (prog ? '<div class="achbar"><u></u></div>' : '') + '</div><em></em>';
+      row.children[0].textContent = a.ico; row.querySelector('b').textContent = a.n; row.querySelector('small').textContent = a.d + (prog ? ' (' + Math.floor(a.val()) + ' / ' + a.goal + ')' : ''); if (prog) row.querySelector('u').style.width = Math.round(prog * 100) + '%';
+      row.querySelector('em').textContent = got ? '✓ Done' : '◎ ' + a.r; list.appendChild(row); }
+    ov.querySelector('#achSum').textContent = done + ' of ' + ACH.length + ' unlocked · rewards add straight to your coins';
+    ov.classList.remove('hide');
+  }
+
+  // daily reward card (in the menu)
+  const card = document.createElement('div'); card.className = 'card hide'; card.id = 'dailyCard';
+  card.innerHTML = '<h3>🎁 Daily reward</h3><div class="best" id="dailyTxt"></div><div class="dailyrow" id="dailyRow"></div><button class="go" type="button" id="dailyGo">Claim</button>';
+  function dailyState() { const today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1); const cont = SAVE.daily.last === dayKey(y);
+    return { claimed: SAVE.daily.last === today, day: SAVE.daily.last === today ? SAVE.daily.streak : (cont ? SAVE.daily.streak % 7 + 1 : 1) }; }
+  function renderDaily() {
+    const st = dailyState(); card.classList.toggle('hide', st.claimed);
+    if (st.claimed) return; const amt = DAILY[st.day - 1];
+    card.querySelector('#dailyTxt').textContent = 'Day ' + st.day + ' of 7 · come back every day for bigger rewards' + (st.day === 1 && SAVE.daily.streak > 1 ? ' (streak restarted)' : '');
+    card.querySelector('#dailyRow').innerHTML = DAILY.map((c, i) => '<div class="' + (i + 1 < st.day ? 'got' : i + 1 === st.day ? 'now' : '') + '">D' + (i + 1) + '<br>' + c + '</div>').join('');
+    card.querySelector('#dailyGo').textContent = 'Claim ◎ ' + amt;
+  }
+  card.querySelector('#dailyGo').onclick = () => { const st = dailyState(); if (st.claimed) return; SAVE.daily = { last: dayKey(), streak: st.day }; SAVE.coins += DAILY[st.day - 1];
+    bump('dailies'); save(); try { tone(660, 0.1, 'triangle', 0.12); setTimeout(() => tone(990, 0.18, 'triangle', 0.12), 90); } catch (e) {} renderDaily(); try { renderMenu(); } catch (e) {} };
+  return { unlock, bump, check, openList, card, renderDaily, dayKey };
+})();
+
+window.__META = META;
+$('tutCard').after(META.card);
+{ const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'go alt'; ab.style.width = 'auto'; ab.textContent = '🏆 Achievements'; ab.onclick = () => META.openList(); $('ctrlBtn').after(ab); }
+META.check();
+
+/* ---------- ghost racer (Time Trial): your best lap replays as a see-through car ---------- */
+function makeGhostVis(G) {
+  const v = makeCar(CARS[G.car] || CARS[SAVE.car], 0x9fe8ff);
+  v.g.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.4; o.material.depthWrite = false; if (o.material.color) o.material.color.setHex(0x9fe8ff); if (o.material.emissive) o.material.emissive.setHex(0x1a4a5a); } });
+  v.beams.visible = false; v.flame.visible = false; v.g.visible = false; world.add(v.g); return v;
+}
+function setupGhost() {
+  R.rec = []; R.recT = 0; R.ghostV = null;
+  const G = SAVE.mode === 'trial' && SAVE.ghosts && SAVE.ghosts[SAVE.track];
+  R.ghost = G || null; if (G) R.ghostV = makeGhostVis(G);
+}
+function ghostLap(lap, lt) {
+  if (SAVE.mode !== 'trial') return;
+  if (lap > 1 && lt > 5 && R.rec.length > 20) {
+    SAVE.ghosts = SAVE.ghosts || {}; const old = SAVE.ghosts[SAVE.track];
+    if (!old || lt < old.t) {
+      if (old) { META.unlock('ghost'); toast('👻 YOU BEAT YOUR GHOST!'); } else toast('👻 GHOST SAVED: RACE IT!');
+      SAVE.ghosts[SAVE.track] = { t: +lt.toFixed(2), car: SAVE.car, p: R.rec }; save(); R.ghost = SAVE.ghosts[SAVE.track]; if (!R.ghostV) R.ghostV = makeGhostVis(R.ghost);
+    }
+  }
+  R.rec = []; R.recT = 0;
+}
+function stepGhost(dt) {
+  if (SAVE.mode !== 'trial' || R.t < 0) return; const me = R.me;
+  if (me.lap >= 1 && !me.finished) { R.recT -= dt; if (R.recT <= 0) { R.recT = 0.1; R.rec.push([+(R.t - me.lapStart).toFixed(2), +me.x.toFixed(1), +me.y.toFixed(2), +me.z.toFixed(1), +me.yaw.toFixed(2)]); } }
+  if (!R.ghostV) return; const G = R.ghost, p = G.p, lt = R.t - me.lapStart, show = me.lap >= 1 && !me.finished && lt <= G.t && p.length > 1;
+  if (show) { let i = Math.min(p.length - 2, Math.max(0, Math.floor(lt / 0.1))); while (i > 0 && p[i][0] > lt) i--; while (i < p.length - 2 && p[i + 1][0] < lt) i++;
+    const a = p[i], b = p[i + 1], k = clamp((lt - a[0]) / Math.max(0.001, b[0] - a[0]), 0, 1); R.ghostV.g.position.set(lerp(a[1], b[1], k), lerp(a[2], b[2], k), lerp(a[3], b[3], k)); R.ghostV.g.rotation.y = a[4] + angDiff(a[4], b[4]) * k; }
+  R.ghostV.g.visible = show;
+}
 renderMenu();
 // let the Ninebolt splash paint first, then build the world behind it
 setTimeout(() => { window.__nbBusy = () => state === 'race' || state === 'paused';

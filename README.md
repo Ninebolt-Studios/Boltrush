@@ -17,6 +17,8 @@
 - 🎓 2-minute tutorial (◎ 250 the first time)
 - ☁️ Accounts: same login as Ashfall, so your coins, cars and best times are never lost
 - 🎮 Keyboard, touch and controller support
+- 👻 Ghost racer in Time Trial
+- 🎁 Daily rewards + 🏆 11 achievements
 - ⚙️ Settings: sound, camera, steering feel, km/h or mph, touch button size, minimap, graphics
 - 🎁 Gift codes (Settings → Codes)
 
@@ -30,6 +32,7 @@
 ## Updates
 | Version | What's new |
 |---|---|
+| **v5** | **👻 Ghost racer:** in Time Trial your best lap replays as a see-through car to race against (beat it and it becomes your new ghost). **🎁 Daily rewards:** claim coins every day, 7-day streak up to ◎ 400. **🏆 11 achievements** with coin rewards (Big Air, Sideways 2,000-point drift, Shocker, World Tour, Full Garage and more) and a trophy list with progress bars |
 | **v4.4** | **Runs smoother:** everything that never moves (buildings, trees, lamps, the car bodies) is now merged into a few big pieces, so each frame draws 36–59% less (Frost Peak went from 670 draw calls to 274). **Fast graphics** now really lightens the load (lower resolution and no shadows, not just no glow), and the game switches to it by itself if your device struggles mid-race |
 | **v4.3** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a race) and says "✨ Updated to the newest version!" |
 | **v4.2** | **Real JavaScript project:** the game code now lives in `js/game.js` and the styling in `css/style.css` instead of being packed into one HTML page, plus a Python release tool (`tools/release.py`). Same game, it just loads from proper files |
