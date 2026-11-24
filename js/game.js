@@ -275,7 +275,7 @@ function startRace() {
   $('resOv').classList.add('hide'); $('pauseOv').classList.add('hide');
   audio(); camSnap = true;
 }
-function quitToMenu() { state = 'menu'; R = null; clearWorld(); buildTrack(SAVE.track); $('menu').classList.remove('hide'); $('hud').classList.add('hide'); $('touch').classList.add('hide'); $('resOv').classList.add('hide'); $('pauseOv').classList.add('hide'); renderMenu(); engineVol(0); }
+function quitToMenu() { setTimeout(() => { try { window.__nbUpd && window.__nbUpd(); } catch (e) {} }, 1200); state = 'menu'; R = null; clearWorld(); buildTrack(SAVE.track); $('menu').classList.remove('hide'); $('hud').classList.add('hide'); $('touch').classList.add('hide'); $('resOv').classList.add('hide'); $('pauseOv').classList.add('hide'); renderMenu(); engineVol(0); }
 
 /* ---------- physics ---------- */
 function nearestSample(c) { let best = c.si, bd = 1e9; for (let k = -20; k <= 20; k++) { const i = ((c.si + k) % TR.N + TR.N) % TR.N, s = TR.S[i], d = (s.x - c.x) ** 2 + (s.z - c.z) ** 2; if (d < bd) { bd = d; best = i; } } return best; }
@@ -742,6 +742,8 @@ $('gfxBtn').onclick = () => { SAVE.gfx = gfxHi() ? 'fast' : 'high'; save(); gfxL
 gfxLabel(); setTimeout(setupBloom, 300);
 renderMenu();
 // let the Ninebolt splash paint first, then build the world behind it
-setTimeout(() => { buildTrack(SAVE.track); showGarageCar(); renderMenu(); loop(); requestAnimationFrame(() => requestAnimationFrame(() => { try { window.__splashReady && window.__splashReady(); } catch (e) {} })); }, 80);
+setTimeout(() => { window.__nbBusy = () => state === 'race' || state === 'paused';
+try { if (sessionStorage.getItem('br-upd')) { sessionStorage.removeItem('br-upd'); setTimeout(() => { try { toastMenu('✨ Updated to the newest version!'); } catch (e) {} }, 2600); } } catch (e) {}
+buildTrack(SAVE.track); showGarageCar(); renderMenu(); loop(); requestAnimationFrame(() => requestAnimationFrame(() => { try { window.__splashReady && window.__splashReady(); } catch (e) {} })); }, 80);
 window.__br = { get R() { return R; }, get state() { return state; }, input, SAVE, startRace, get TR() { return TR; }, stepRace: dt => stepRace(dt), aiControl: (c, dt) => aiControl(c, dt), useItem: c => useItem(c), giveItem: c => giveItem(c), spinOut: (c, d) => spinOut(c, d), TUT };
 })();

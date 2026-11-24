@@ -25,11 +25,12 @@
 - `js/game.js`: the whole game in JavaScript (three.js 3D engine)
 - `css/style.css`: all the styling
 - `sw.js`: offline support so the game works without internet
-- `tools/release.py`: Python release helper. It checks the scripts and bumps the version stamps so players always get the newest files (`python3 tools/release.py`)
+- `tools/release.py`: Python release helper. It checks the scripts and bumps the version stamps, which also triggers the in-game auto-updater for everyone (`python3 tools/release.py`)
 
 ## Updates
 | Version | What's new |
 |---|---|
+| **v4.3** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a race) and says "✨ Updated to the newest version!" |
 | **v4.2** | **Real JavaScript project:** the game code now lives in `js/game.js` and the styling in `css/style.css` instead of being packed into one HTML page, plus a Python release tool (`tools/release.py`). Same game, it just loads from proper files |
 | **v4.1** | Phone polish: results and pause screens always fit (no more cut-off Race Again button on a sideways phone), touch buttons keep their spacing when they shrink (Brake no longer covers ▶ on small phones), compact HUD on short screens, menu logo fits on phones |
 | **v4** | **⚙️ Settings** (sound, camera distance, steering feel, km/h or mph, touch button size, minimap, graphics), **🎁 codes** (gift codes for coins or cars), the **Ninebolt Studios intro**, and **iPad fix**: the touch buttons always stay on screen (they size themselves to your screen and the page can't zoom or scroll anymore) |
