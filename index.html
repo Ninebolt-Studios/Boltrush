@@ -440,10 +440,10 @@ function stepCar(c, dt, ctl) {
   const boosting = !spinning && (c.boostT > 0 || (ctl.nitro && c.nitro > 0.02));
   if (ctl.nitro && c.nitro > 0.02 && c.boostT <= 0) c.nitro = Math.max(0, c.nitro - dt * 0.32);
   c.boostT = Math.max(0, c.boostT - dt);
-  const top = sp.top * (boosting ? 1.32 : 1) * (c.slipT > 0.4 ? 1.08 : 1) * (c.wallT > 0 ? 0.85 : 1);
+  const top = sp.top * (boosting ? 1.32 : 1) * (c.slipT > 0.4 ? 1.08 : 1) * (c.wallT > 0 ? 0.85 : 1) * (c.ai && c.rb ? c.rb : 1);
   if (spinning) { vf *= Math.exp(-1.4 * dt); vl *= Math.exp(-2.5 * dt); c.drifting = false; }
   else {
-    if (ctl.gas > 0 && !c.air) vf += sp.acc * ctl.gas * (boosting ? 1.6 : 1) * (vf < top ? 1 : 0) * dt * (1 - Math.max(0, vf) / (top * 1.05));
+    if (ctl.gas > 0 && !c.air) vf += sp.acc * (c.ai && c.rb ? Math.max(0.8, c.rb) : 1) * ctl.gas * (boosting ? 1.6 : 1) * (vf < top ? 1 : 0) * dt * (1 - Math.max(0, vf) / (top * 1.05));
     if (ctl.brake > 0 && !c.air) vf -= (vf > 1 ? 45 : 14) * ctl.brake * dt;
     if (!ctl.gas && !ctl.brake) vf *= Math.exp(-0.35 * dt);
     vf = Math.max(-14, vf); if (vf > top) vf = lerp(vf, top, Math.min(1, dt * 2));
@@ -527,8 +527,11 @@ function aiControl(c, dt) {
   const spd = Math.hypot(c.vx, c.vz), look = 10 + Math.floor(spd * 0.35), tp = trackPoint(c.si + look, c.lane);
   const want = Math.atan2(tp.x - c.x, tp.z - c.z), d = angDiff(c.yaw, want);
   const a = TR.S[c.si], b = TR.S[(c.si + 35) % TR.N], curv = Math.abs(angDiff(Math.atan2(a.tx, a.tz), Math.atan2(b.tx, b.tz)));
-  // rubber band: rivals far behind push a bit harder, rivals far ahead ease off
-  const gap = (R.me.prog - c.prog) / TR.N, rb = clamp(1 + gap * 0.08, 0.9, 1.08);
+  // adaptive rivals: if you're ahead of a rival it pushes harder (up to ~18% faster) to catch you,
+  // if it's way ahead of you it eases off (down to ~25% slower) so you can get back in the race
+  const gapM = (R.me.prog - c.prog) * 1.5, rbWant = 1 + clamp(gapM / 350, -0.25, 0.18);
+  c.rb = lerp(c.rb || 1, rbWant, Math.min(1, dt * 0.8)); const rb = c.rb;
+  if (gapM > 120) { c.nitro = Math.min(1, c.nitro + dt * 0.04); c.nitroCd -= dt; } // far behind you: extra nitro
   const target = c.spec.top * c.skill * rb * (1 - clamp(curv * 0.55, 0, 0.45));
   c.nitroCd -= dt; let nitro = false; if (c.nitroCd <= 0 && curv < 0.15 && c.nitro > 0.3) { nitro = true; if (c.nitroCd < -1.6) c.nitroCd = 6 + Math.random() * 6; }
   return { steer: clamp(-d * 2.2, -1, 1), gas: spd < target ? 1 : 0, brake: spd > target + 6 ? 0.6 : 0, drift: curv > 0.5 && spd > 30, nitro };
