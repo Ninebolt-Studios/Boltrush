@@ -11,10 +11,10 @@
 <link rel="icon" href="boltrush-192.png">
 <link rel="apple-touch-icon" href="boltrush-touch.png">
 <link rel="manifest" href="manifest.webmanifest">
-<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124192119',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('br-rl')===want)return;sessionStorage.setItem('br-rl',want);sessionStorage.setItem('br-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
+<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124195249',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('br-rl')===want)return;sessionStorage.setItem('br-rl',want);sessionStorage.setItem('br-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
 
 <meta name="apple-mobile-web-app-title" content="Boltrush">
-<link rel="stylesheet" href="css/style.css?v=20261124192119">
+<link rel="stylesheet" href="css/style.css?v=20261124195249">
 </head>
 <body>
 <canvas id="view"></canvas>
@@ -41,7 +41,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
         <input class="inp" id="acEmail" type="email" autocomplete="email" placeholder="Email"><input class="inp" id="acPass" type="password" autocomplete="current-password" placeholder="Password (6+ characters)">
         <div class="acrow"><button class="go" id="acIn" type="button">Sign in</button><button class="go alt" id="acUp" type="button">Create account</button></div>
         <button class="go alt" id="acForgot" type="button" style="margin-top:8px;font-size:13px;padding:9px">Forgot password?</button></div>
-      <div id="acInBox" class="hide"><div class="best" id="acWho" style="margin:0 0 10px"></div><div class="acrow"><button class="go alt" id="acSync" type="button">↻ Sync now</button><button class="go alt" id="acOutBtn" type="button">Sign out</button></div></div>
+      <div id="acInBox" class="hide"><div class="best" id="acWho" style="margin:0 0 10px"></div><input class="inp" id="nameIn" maxlength="14" placeholder="Your name on the leaderboards" autocomplete="nickname"><div class="acrow"><button class="go alt" id="acSync" type="button">↻ Sync now</button><button class="go alt" id="acOutBtn" type="button">Sign out</button></div></div>
       <div class="best" id="acMsg" style="margin:8px 0 0"></div></div>
     <div class="row" style="justify-content:space-between"><button class="go alt" id="ctrlBtn" type="button" style="width:auto">🎮 Controls</button><button class="go alt hide" id="appBtn" type="button" style="width:auto">📲 Get the app</button><button class="go alt" id="setBtn" type="button" style="width:auto">⚙️ Settings</button><a class="go alt" style="width:auto;text-decoration:none;text-align:center" href="https://ninebolt-studios.github.io/Ninebolt-Studios-Website/">Ninebolt Studios ↗</a></div>
   </div>
@@ -85,7 +85,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
   <button class="go" id="ctrlClose" type="button">Got it</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/game.js?v=20261124192119"></script>
+<script src="js/game.js?v=20261124195249"></script>
 <script>/* offline + installable app */ try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); } catch (e) {}</script>
 </body>
 </html>

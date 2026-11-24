@@ -9,7 +9,7 @@
 - 🌐 **Ninebolt Studios:** https://ninebolt-studios.github.io/Ninebolt-Studios-Website/
 
 ## Features
-- 🏁 Race 7 adaptive rivals (they push harder when you lead, ease off when you're behind) on 3 tracks (Neon Harbor, Dust Canyon, Frost Pass), or do time trials
+- 🏁 Race 7 adaptive rivals (they push harder when you lead, ease off when you're behind) on 4 tracks, including the Sunset Docks water jump (Neon Harbor, Dust Canyon, Frost Pass), or do time trials
 - 💨 Drift combos (×2…×5) that fill nitro and pay bonus coins, plus slipstream
 - ⚡ Item boxes: 🚀 turbo, ⚡ shock, 🛡️ shield
 - 🚀 Ramps for big air, cones and barrels that go flying, real car-to-car collisions
@@ -32,6 +32,7 @@
 ## Updates
 | Version | What's new |
 |---|---|
+| **v6** | **🌅 New track: Sunset Docks**, a harbor at golden hour with shipping containers, giant cranes and a lighthouse. Its big full-width ramp launches you over a water channel: make the jump or splash down and slow right down! Plus a name box in the account card for the new **🏆 Ninebolt leaderboards** on the website |
 | **v5** | **👻 Ghost racer:** in Time Trial your best lap replays as a see-through car to race against (beat it and it becomes your new ghost). **🎁 Daily rewards:** claim coins every day, 7-day streak up to ◎ 400. **🏆 11 achievements** with coin rewards (Big Air, Sideways 2,000-point drift, Shocker, World Tour, Full Garage and more) and a trophy list with progress bars |
 | **v4.4** | **Runs smoother:** everything that never moves (buildings, trees, lamps, the car bodies) is now merged into a few big pieces, so each frame draws 36–59% less (Frost Peak went from 670 draw calls to 274). **Fast graphics** now really lightens the load (lower resolution and no shadows, not just no glow), and the game switches to it by itself if your device struggles mid-race |
 | **v4.3** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a race) and says "✨ Updated to the newest version!" |

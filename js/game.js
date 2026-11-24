@@ -25,6 +25,8 @@ const TRACKS = {
             pts: [[0,0],[120,10],[200,60],[230,150],[180,230],[90,250],[30,200],[-20,140],[-110,170],[-200,120],[-210,30],[-150,-40],[-60,-30]] },
   canyon: { n: 'Dust Canyon', d: 'Desert at sunset', sky: 0xffb070, fog: 0xe0a070, ground: 0xc8894a, light: 1.0, sun: 1.5, road: '#4a3c32', edge: 0xff8a2a, scen: 'desert',
             pts: [[0,0],[90,-30],[170,10],[200,90],[150,150],[60,130],[0,190],[-90,220],[-170,160],[-160,70],[-230,0],[-200,-90],[-110,-100],[-40,-60]] },
+  docks:  { n: 'Sunset Docks', d: 'Harbor jump at golden hour', sky: 0xffa45a, fog: 0xf2b88a, ground: 0x6c7078, light: 1.0, sun: 1.45, road: '#34363e', edge: 0xffc93c, scen: 'docks', bigJump: true,
+            pts: [[0,0],[130,-20],[230,10],[250,100],[180,150],[210,230],[110,270],[10,225],[-80,250],[-170,190],[-150,100],[-225,40],[-175,-50],[-75,-45]] },
   frost:  { n: 'Frost Peak', d: 'Snowy mountain pass', sky: 0xbcd0e6, fog: 0xd6e2ee, ground: 0xe8eef4, light: 1.0, sun: 1.3, road: '#3a3e46', edge: 0xff4f6d, scen: 'snow', hills: true,
             pts: [[0,0],[110,20],[190,-30],[260,20],[250,120],[170,170],[120,110],[40,150],[-40,220],[-140,190],[-150,100],[-90,60],[-170,-10],[-120,-80],[-30,-60]] },
 };
@@ -179,8 +181,21 @@ function buildTrack(id) {
   // ramps
   const rampT = canvasTex(64, 64, (g, w, h) => { g.fillStyle = '#ffd23f'; g.fillRect(0, 0, w, h); g.fillStyle = '#15161c'; for (let k = -3; k < 4; k++) { g.beginPath(); g.moveTo(k * 24, 0); g.lineTo(k * 24 + 12, 0); g.lineTo(k * 24 + 12 + h, h); g.lineTo(k * 24 + h, h); g.fill(); } });
   const rampM = new THREE.MeshStandardMaterial({ map: rampT, roughness: 0.6 }), ramps = [];
-  const addRamp = (i, off, wd) => { const q = P(i, off), m = new THREE.Mesh(new THREE.BoxGeometry(wd, 0.25, 5.5), rampM); m.rotation.x = -0.21; m.position.y = 0.55; m.castShadow = m.receiveShadow = true; const rg = new THREE.Group(); rg.add(m); rg.rotation.y = q.yaw; rg.position.set(q.x, q.y, q.z); world.add(rg); ramps.push({ x: q.x, z: q.z, tx: S[q.i].tx, tz: S[q.i].tz, w: wd / 2 }); };
+  const addRamp = (i, off, wd) => { const q = P(i, off), m = new THREE.Mesh(new THREE.BoxGeometry(wd, 0.25, 5.5), rampM); m.rotation.x = -0.21; m.position.y = 0.55; m.castShadow = m.receiveShadow = true; const rg = new THREE.Group(); rg.add(m); rg.rotation.y = q.yaw; rg.position.set(q.x, q.y, q.z); world.add(rg); ramps.push({ x: q.x, z: q.z, tx: S[q.i].tx, tz: S[q.i].tz, w: wd / 2, big: wd > 8 }); };
   for (const f of [0.3, 0.7]) addRamp(Math.round(N * f), (Math.random() - 0.5) * 6, 5);
+  let water = null;
+  if (T.bigJump) {
+    // a full-width launch ramp, then a water channel across the road: make the jump or splash down
+    const i0 = Math.round(N * 0.47); addRamp(i0, 0, HALFW * 2 - 0.5);
+    const w0 = i0 + 6, w1 = i0 + 24, pos = [], uvs = [];
+    for (let i = w0; i < w1; i++) { const a = P(i, -(HALFW + 9)), b = P(i, HALFW + 9), c2 = P(i + 1, -(HALFW + 9)), d2 = P(i + 1, HALFW + 9); pos.push(a.x, a.y + 0.06, a.z, b.x, b.y + 0.06, b.z, d2.x, d2.y + 0.06, d2.z, a.x, a.y + 0.06, a.z, d2.x, d2.y + 0.06, d2.z, c2.x, c2.y + 0.06, c2.z); uvs.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1); }
+    const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); wg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); wg.computeVertexNormals();
+    const wt = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#1e6f9e'; g.fillRect(0, 0, w, h); for (let k = 0; k < 90; k++) { g.strokeStyle = 'rgba(255,220,170,' + (0.1 + Math.random() * 0.25) + ')'; g.lineWidth = 2; g.beginPath(); const x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); g.quadraticCurveTo(x + 8, y - 3, x + 16, y); g.stroke(); } });
+    const wm = new THREE.Mesh(wg, new THREE.MeshStandardMaterial({ map: wt, roughness: 0.15, metalness: 0.25, transparent: true, opacity: 0.95, polygonOffset: true, polygonOffsetFactor: -4 })); wm.userData.keep = true; world.add(wm);
+    // concrete edges either side of the channel
+    for (const i of [w0, w1]) { const q = P(i, 0), e = new THREE.Mesh(new THREE.BoxGeometry(HALFW * 2 + 18, 0.5, 0.8), new THREE.MeshStandardMaterial({ color: col(0x8a8e96), roughness: 0.9 })); e.position.set(q.x, q.y - 0.1, q.z); e.rotation.y = q.yaw; world.add(e); }
+    water = { a: w0, b: w1 };
+  }
   // cones + barrels that go flying
   const coneM = new THREE.MeshStandardMaterial({ color: col(0xff7a1a), roughness: 0.5 }), brlM = new THREE.MeshStandardMaterial({ color: col(0xd02a2a), roughness: 0.35, metalness: 0.3 });
   const coneG = new THREE.ConeGeometry(0.32, 0.85, 10), brlG = new THREE.CylinderGeometry(0.45, 0.45, 1.1, 12), props = [];
@@ -212,7 +227,7 @@ function buildTrack(id) {
     const roof = new THREE.Mesh(new THREE.BoxGeometry(31, 0.3, 7.5), new THREE.MeshStandardMaterial({ color: col(0xffd23f), emissive: col(0xffd23f), emissiveIntensity: night ? 0.3 : 0 })); roof.position.set(0, 7.5, -2.5); gs.add(roof);
     for (const sx of [-15, 15]) { const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7.5, 0.4), poleM); c2.position.set(sx, 3.75, -5.5); gs.add(c2); }
     gs.rotation.y = Math.atan2(-S[q.i].tz, S[q.i].tx); gs.position.set(q.x, q.y, q.z); world.add(gs); }
-  TR = { S, N, len, pads, id, boxes, ramps, props, addPad, addBoxRow, addRamp };
+  TR = { S, N, len, pads, id, boxes, ramps, props, addPad, addBoxRow, addRamp, water };
   scenery(T); for (const p of TR.props) p.m.userData.keep = true; for (const b of TR.boxes) b.m.userData.keep = true; mergeStatic(world); try { tuneBloom(); } catch (e) {}
 }
 function nearDist(x, z) { let best = 1e9; for (let i = 0; i < TR.N; i += 4) { const s = TR.S[i], d = (s.x - x) ** 2 + (s.z - z) ** 2; if (d < best) best = d; } return Math.sqrt(best); }
@@ -229,6 +244,17 @@ function scenery(T) {
     place(80, 32, 170, (x, z, r) => { const h = 6 + r() * 40, m = new THREE.Mesh(new THREE.CylinderGeometry(3 + r() * 8, 6 + r() * 12, h, 7), rock); m.position.y = h / 2; m.rotation.y = r() * 6; m.castShadow = true; return m; });
     const cac = new THREE.MeshStandardMaterial({ color: col(0x3f7a3a), roughness: 0.9 });
     place(60, 12, 50, (x, z, r) => { const g = new THREE.Group(), h = 2 + r() * 3; const t = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, h, 8), cac); t.position.y = h / 2; g.add(t); const a = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.4, 8), cac); a.position.set(0.6, h * 0.6, 0); g.add(a); return g; });
+  } else if (T.scen === 'docks') {
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 1200), new THREE.MeshStandardMaterial({ color: col(0x2a6f9a), roughness: 0.2, metalness: 0.3 })); sea.rotation.x = -Math.PI / 2; sea.position.set(0, -0.02, 1050); world.add(sea);
+    const cols = [0xd8343c, 0x2a7fd8, 0xf0a020, 0x3aa860, 0x8a4ad8, 0xe0e4ea].map(c => new THREE.MeshStandardMaterial({ color: col(c), roughness: 0.6, metalness: 0.2 }));
+    const cg = new THREE.BoxGeometry(12, 2.6, 2.5);
+    place(40, 14, 70, (x, z, r) => { const g = new THREE.Group(), stacks = 1 + (r() * 3 | 0), rows = 1 + (r() * 2 | 0); for (let a = 0; a < rows; a++) for (let b = 0; b < stacks; b++) { const m = new THREE.Mesh(cg, cols[(r() * cols.length) | 0]); m.position.set(0, 1.3 + b * 2.6, a * 2.6); m.castShadow = true; g.add(m); } g.rotation.y = r() * Math.PI; return g; });
+    const yel = new THREE.MeshStandardMaterial({ color: col(0xffc93c), roughness: 0.5, metalness: 0.4 }), bar = new THREE.BoxGeometry(1, 1, 1);
+    place(7, 40, 110, (x, z, r) => { const g = new THREE.Group(), h = 34 + r() * 14; for (const sx of [-4, 4]) for (const sz of [-4, 4]) { const leg = new THREE.Mesh(bar, yel); leg.scale.set(1, h, 1); leg.position.set(sx, h / 2, sz); g.add(leg); }
+      const boom = new THREE.Mesh(bar, yel); boom.scale.set(2, 2, 46); boom.position.set(0, h + 1, 12); g.add(boom); const cab = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 4), new THREE.MeshStandardMaterial({ color: col(0x2a2c34) })); cab.position.set(0, h - 1, 0); g.add(cab); g.rotation.y = r() * Math.PI * 2; return g; });
+    const bolM = new THREE.MeshStandardMaterial({ color: col(0x2a2c34), roughness: 0.5 }); place(60, 11, 18, (x, z, r) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.38, 0.9, 8), bolM); m.position.y = 0.45; return m; });
+    { const lh = new THREE.Group(), m1 = new THREE.MeshStandardMaterial({ color: col(0xf4f1e8) }), m2 = new THREE.MeshStandardMaterial({ color: col(0xd8343c) }); for (let k = 0; k < 6; k++) { const seg = new THREE.Mesh(new THREE.CylinderGeometry(3.4 - k * 0.3, 3.6 - k * 0.3, 5, 14), k % 2 ? m2 : m1); seg.position.y = 2.5 + k * 5; lh.add(seg); }
+      const lamp = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xfff0b0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); lamp.scale.set(14, 14, 1); lamp.position.y = 33; lh.add(lamp); lh.position.set(260, 0, 520); world.add(lh); }
   } else {
     const pine = new THREE.MeshStandardMaterial({ color: col(0x1e3a2a), roughness: 0.9 }), snowM = new THREE.MeshStandardMaterial({ color: col(0xf4f8fc), roughness: 0.8 }), trunk = new THREE.MeshStandardMaterial({ color: col(0x4a3420) });
     place(160, 12, 120, (x, z, r) => { const g = new THREE.Group(), s = 0.8 + r() * 1.2; const t = new THREE.Mesh(new THREE.CylinderGeometry(0.3 * s, 0.4 * s, 2 * s, 6), trunk); t.position.y = s; g.add(t);
@@ -336,9 +362,12 @@ function stepCar(c, dt, ctl) {
   // ramps + airtime
   let gy = s.y;
   if (!c.air) for (const r of TR.ramps) { const dx = c.x - r.x, dz = c.z - r.z, al = dx * r.tx + dz * r.tz, la = dx * -r.tz + dz * r.tx;
-    if (Math.abs(la) < r.w + 0.4 && al > -2.75 && al < 2.75 && vf > 10) { gy = s.y + (al + 2.75) / 5.5 * 1.15; if (al > 2.1) { c.air = true; c.vy = 3 + vf * 0.17; c.airT = 0; c.y = gy; if (c === R.me) whoosh(); } } }
+    if (Math.abs(la) < r.w + 0.4 && al > -2.75 && al < 2.75 && vf > 10) { gy = s.y + (al + 2.75) / 5.5 * 1.15; if (al > 2.1) { c.air = true; c.vy = r.big ? 5 + vf * 0.23 : 3 + vf * 0.17; c.airT = 0; c.y = gy; if (c === R.me) whoosh(); } } }
   if (c.air) { c.vy -= 30 * dt; c.y += c.vy * dt; c.airT += dt; if (c.y <= s.y) { c.y = s.y; c.air = false; landed(c, near); } }
   else c.y = lerp(c.y, gy, Math.min(1, dt * (gy > s.y + 0.05 ? 30 : 10)));
+  // Sunset Docks: missed the jump? you're in the water
+  if (TR.water && !c.air && c.si >= TR.water.a && c.si < TR.water.b) { vf *= Math.exp(-2.6 * dt); const k2 = Math.exp(-2.6 * dt); c.vx *= k2; c.vz *= k2; if (near && Math.random() < 0.6) smoke.emit(c.x + (Math.random() - .5) * 2, c.y + 0.3, c.z + (Math.random() - .5) * 2, (Math.random() - .5) * 3, 2 + Math.random() * 3, (Math.random() - .5) * 3, 0.6); if (c === R.me && !c.splashed) { c.splashed = true; toast('💦 SPLASH! Hit the ramp to jump it'); thud(); } }
+  else if (c.splashed && !(TR.water && c.si >= TR.water.a && c.si < TR.water.b)) c.splashed = false;
   // boost pads
   if (!c.air) for (const p of TR.pads) if ((p.x - c.x) ** 2 + (p.z - c.z) ** 2 < 6) { if (c.boostT <= 0 && c === R.me) { whoosh(); toast('BOOST!'); R.padHit = true; } c.boostT = Math.max(c.boostT, 1.2); }
   // laps
@@ -669,6 +698,7 @@ async function cloudSync(startup) {
     Object.assign(SAVE, merged); if (!SAVE.cars.includes(SAVE.car)) SAVE.car = 'volt';
     const key = progKey(merged);
     if (cloud ? progKey(cloud) !== key : key !== CLOUD.last) { await ref.set({ br: merged, brAt: Date.now() }, { merge: true }); CLOUD.last = key; }
+    CLOUD.db.collection('lb_br').doc(CLOUD.user.uid).set({ name: String(SAVE.name || 'Racer').slice(0, 14), wins: +SAVE.wins || 0, cars: (SAVE.cars || []).length, tracks: Object.keys(SAVE.best || {}).length, at: Date.now() }).catch(() => {});
     SAVE.cloudAt = Date.now(); try { localStorage.setItem('boltrush', JSON.stringify(SAVE)); } catch (e) {}
     if (startup) acMsg(cloud ? (before !== key ? 'Loaded your account progress ✓' : 'Your progress matches your account ✓') : 'Progress on this device is now saved to your account ✓');
     if (before !== key && state === 'menu') { renderMenu(); showGarageCar(); }
@@ -686,7 +716,8 @@ const errText = e => ERRS[e && e.code] || ('Something went wrong' + (e && e.code
   $('acSync').onclick = async () => { acMsg('Syncing…'); await cloudSync(true); };
   $('acOutBtn').onclick = async () => { try { await cloudSync(false); } catch (e) {} try { await CLOUD.auth.signOut(); } catch (e) {} CLOUD.seen = false; CLOUD.last = ''; acMsg('Signed out. Your progress stays on this device and in your account.'); };
   $('acPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('acIn').click(); });
-  for (const id of ['acEmail', 'acPass']) { $(id).addEventListener('keydown', e => e.stopPropagation()); $(id).addEventListener('keyup', e => e.stopPropagation()); }
+  for (const id of ['acEmail', 'acPass', 'nameIn']) { $(id).addEventListener('keydown', e => e.stopPropagation()); $(id).addEventListener('keyup', e => e.stopPropagation()); }
+  $('nameIn').value = SAVE.name || ''; $('nameIn').addEventListener('change', () => { SAVE.name = $('nameIn').value.replace(/[<>]/g, '').trim().slice(0, 14); save(); });
   // signed in on Ashfall (same website)? you're signed in here too
   setTimeout(() => cloudInit().catch(() => {}), 1200);
   document.addEventListener('visibilitychange', () => { if (document.hidden && CLOUD.user) cloudSync(false); }); }
@@ -770,7 +801,7 @@ const ACH = [
   { id: 'air', ico: '🚀', n: 'Big air', d: 'Land a BIG AIR jump', r: 75, goal: 1, val: () => SAVE.stats.bigair },
   { id: 'cones', ico: '🧡', n: 'Cone collector', d: 'Smash 25 cones or barrels', r: 100, goal: 25, val: () => SAVE.stats.cones },
   { id: 'shock', ico: '⚡', n: 'Shocker', d: 'Shock 10 rivals with items', r: 150, goal: 10, val: () => SAVE.stats.shocks },
-  { id: 'tour', ico: '🗺️', n: 'World tour', d: 'Finish a race on all 3 tracks', r: 200, goal: 3, val: () => SAVE.stats.tracks.split(',').filter(Boolean).length },
+  { id: 'tour', ico: '🗺️', n: 'World tour', d: 'Finish a race on 3 different tracks', r: 200, goal: 3, val: () => SAVE.stats.tracks.split(',').filter(Boolean).length },
   { id: 'ghost', ico: '👻', n: 'Beat yourself', d: 'Beat your own ghost in Time Trial', r: 150 },
   { id: 'garage', ico: '🚗', n: 'Full garage', d: 'Own all 4 cars', r: 500, goal: 4, val: () => SAVE.cars.length },
   { id: 'daily7', ico: '📅', n: 'Regular', d: 'Claim 7 daily rewards', r: 200, goal: 7, val: () => SAVE.stats.dailies },
