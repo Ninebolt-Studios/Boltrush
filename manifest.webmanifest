@@ -1,0 +1,23 @@
+{
+  "name": "Boltrush",
+  "short_name": "Boltrush",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#12131a",
+  "theme_color": "#12131a",
+  "icons": [
+    {
+      "src": "boltrush-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "boltrush-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
