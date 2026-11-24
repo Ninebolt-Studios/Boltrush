@@ -1,6 +1,8 @@
-# 🏁 Boltrush
+<p align="center"><img src="boltrush-round.png" alt="Boltrush" width="140"></p>
+<h1 align="center">🏁 Boltrush</h1>
+<p align="center">An arcade racer by <b>Ninebolt Studios</b>. Free in your browser on iPhone, iPad, Android and PC.</p>
 
-An arcade racer by **Ninebolt Studios**. Free in your browser on iPhone, iPad, Android and PC.
+<p align="center"><b><a href="https://ninebolt-studios.github.io/Boltrush/">▶ PLAY NOW</a></b></p>
 
 - ▶ **Play:** https://ninebolt-studios.github.io/Boltrush/
 - 📲 **App (iPhone/iPad):** https://ninebolt-studios.github.io/Boltrush/Boltrush.mobileconfig
