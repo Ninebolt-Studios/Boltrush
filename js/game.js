@@ -42,7 +42,7 @@ const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 1600);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x404040, 0.8); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(80, 160, 60); sun.castShadow = true;
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 }); sun.shadow.mapSize.set(1024, 1024); scene.add(sun); scene.add(sun.target);
-function resize() { const dpr = Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 2); renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false); if (window.__gfxC) { const c = window.__gfxC; c.setPixelRatio(dpr); c.setSize(innerWidth, innerHeight); } if (false) { GFX.composer.setPixelRatio(dpr); GFX.composer.setSize(innerWidth, innerHeight); } camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+function resize() { const fast = SAVE.gfx === 'fast', dpr = Math.min(window.devicePixelRatio || 1, fast ? 1 : isTouch ? 1.5 : 2); renderer.shadowMap.enabled = !isTouch && !fast; renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false); if (window.__gfxC) { const c = window.__gfxC; c.setPixelRatio(dpr); c.setSize(innerWidth, innerHeight); } if (false) { GFX.composer.setPixelRatio(dpr); GFX.composer.setSize(innerWidth, innerHeight); } camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const loadJs = src => new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.async = true; sc.onload = ok; sc.onerror = () => no(new Error('load')); document.head.appendChild(sc); });
 /* glow (bloom) + colour grade. Loads after the game starts; if it can't load, the game just renders normally */
@@ -68,7 +68,7 @@ function tuneBloom() { if (!GFX.bloom || !TR) return; const night = TR.id === 'n
 function renderFrame(dt) {
   if (GFX.composer && gfxHi()) {
     // auto-lower if the device can't keep up during a race
-    GFX.avg = GFX.avg * 0.95 + dt * 0.05; if (state === 'race' && GFX.avg > 1 / 32) { GFX.slowT += dt; if (GFX.slowT > 4) { SAVE.gfx = 'fast'; save(); gfxLabel(); toast('Graphics lowered for smoother racing'); } } else GFX.slowT = 0;
+    GFX.avg = GFX.avg * 0.95 + dt * 0.05; if (state === 'race' && GFX.avg > 1 / 32) { GFX.slowT += dt; if (GFX.slowT > 4) { SAVE.gfx = 'fast'; save(); gfxLabel(); resize(); toast('Graphics lowered for smoother racing'); } } else GFX.slowT = 0;
     GFX.composer.render(dt);
   } else renderer.render(scene, camera);
 }
@@ -103,6 +103,23 @@ function clearFx() { skidPos.fill(0); skidGeo.attributes.position.needsUpdate = 
 function burst(pool, x, y, z, n, sp, up, l) { for (let k = 0; k < n; k++) pool.emit(x, y, z, (Math.random() - .5) * sp, Math.random() * up, (Math.random() - .5) * sp, l * (0.6 + Math.random() * 0.6)); }
 let TR = null, PMREM = null; // { samples:[{x,y,z,tx,tz}], N, len, pads:[] }
 function clearWorld() { for (const o of [...world.children]) { world.remove(o); o.traverse(c => { if (c.geometry) c.geometry.dispose(); }); } }
+/* ---------- performance: merge everything that never moves into one mesh per material (far fewer draw calls) ---------- */
+function concatGeo(gs) {
+  const out = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal', 'uv']) { if (!gs.every(g => g.attributes[name])) continue; const size = gs[0].attributes[name].itemSize; let n = 0; for (const g of gs) n += g.attributes[name].array.length;
+    const arr = new Float32Array(n); let off = 0; for (const g of gs) { arr.set(g.attributes[name].array, off); off += g.attributes[name].array.length; } out.setAttribute(name, new THREE.BufferAttribute(arr, size)); }
+  out.computeBoundingSphere(); return out;
+}
+function mergeStatic(root) {
+  root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map(), skip = new Set();
+  root.traverse(o => { if (o.userData.keep) o.traverse(c => skip.add(c)); });
+  root.traverse(o => { if (o === root || !o.isMesh || o.isInstancedMesh || skip.has(o) || Array.isArray(o.material) || o.material.transparent || !o.geometry.attributes.normal) return;
+    const key = o.material.uuid + '|' + (o.geometry.attributes.uv ? 1 : 0) + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0); if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(o); });
+  for (const list of buckets.values()) { if (list.length < 2) continue;
+    const parts = list.map(o => { const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); return g; });
+    const m = new THREE.Mesh(concatGeo(parts), list[0].material); m.castShadow = list[0].castShadow; m.receiveShadow = list[0].receiveShadow; root.add(m);
+    for (const o of list) { o.parent.remove(o); } parts.forEach(g => g.dispose()); }
+}
 function buildTrack(id) {
   clearWorld(); const T = TRACKS[id];
   scene.background = col(T.sky); scene.fog = new THREE.Fog(col(T.fog), 120, 700);
@@ -196,7 +213,7 @@ function buildTrack(id) {
     for (const sx of [-15, 15]) { const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7.5, 0.4), poleM); c2.position.set(sx, 3.75, -5.5); gs.add(c2); }
     gs.rotation.y = Math.atan2(-S[q.i].tz, S[q.i].tx); gs.position.set(q.x, q.y, q.z); world.add(gs); }
   TR = { S, N, len, pads, id, boxes, ramps, props, addPad, addBoxRow, addRamp };
-  scenery(T); try { tuneBloom(); } catch (e) {}
+  scenery(T); for (const p of TR.props) p.m.userData.keep = true; for (const b of TR.boxes) b.m.userData.keep = true; mergeStatic(world); try { tuneBloom(); } catch (e) {}
 }
 function nearDist(x, z) { let best = 1e9; for (let i = 0; i < TR.N; i += 4) { const s = TR.S[i], d = (s.x - x) ** 2 + (s.z - z) ** 2; if (d < best) best = d; } return Math.sqrt(best); }
 function scenery(T) {
@@ -247,6 +264,7 @@ function makeCar(spec, paint) {
   const flame = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.4, 8), new THREE.MeshBasicMaterial({ color: 0x5ae0ff, transparent: true, opacity: 0.85 })); flame.rotation.x = -Math.PI / 2; flame.position.set(0, 0.55, -L / 2 - 0.7); flame.visible = false; g.add(flame);
   const fg = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0x5ae0ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9 })); fg.scale.set(2.2, 2.2, 1); fg.position.set(0, -0.4, 0); flame.add(fg);
   const beams = new THREE.Group(); for (const sd of [-1, 1]) { const bm = new THREE.Mesh(new THREE.ConeGeometry(1.7, 10, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); bm.rotation.x = -Math.PI / 2; bm.position.set(sd * W * 0.32, 0.55, L / 2 + 5); beams.add(bm); } beams.visible = false; g.add(beams);
+  for (const w of wheels) { mergeStatic(w); w.userData.keep = true; } flame.userData.keep = shield.userData.keep = beams.userData.keep = true; mergeStatic(g);
   g.rotation.order = 'YXZ';
   return { g, wheels, flame, shield, tails, beams };
 }
@@ -738,7 +756,7 @@ $('admItems').onclick = () => { if (!isAdmin()) return; ADM.items = !ADM.items; 
 $('admReset').onclick = () => { if (!isAdmin() || !confirm('Reset coins, cars and best times on this device?')) return; Object.assign(SAVE, { coins: 0, cars: ['volt'], car: 'volt', best: {}, bestLap: {}, wins: 0 }); save(); renderMenu(); showGarageCar(); $('codeMsg').textContent = 'Progress reset on this device.'; };
 $('admLeave').onclick = () => { delete SAVE.admin; save(); renderAdmin(); $('codeMsg').textContent = 'Left admin.'; };
 applySettings();
-$('gfxBtn').onclick = () => { SAVE.gfx = gfxHi() ? 'fast' : 'high'; save(); gfxLabel(); GFX.slowT = 0; GFX.avg = 1 / 60; setupBloom(); };
+$('gfxBtn').onclick = () => { SAVE.gfx = gfxHi() ? 'fast' : 'high'; save(); gfxLabel(); resize(); GFX.slowT = 0; GFX.avg = 1 / 60; setupBloom(); };
 gfxLabel(); setTimeout(setupBloom, 300);
 renderMenu();
 // let the Ninebolt splash paint first, then build the world behind it

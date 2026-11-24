@@ -30,6 +30,7 @@
 ## Updates
 | Version | What's new |
 |---|---|
+| **v4.4** | **Runs smoother:** everything that never moves (buildings, trees, lamps, the car bodies) is now merged into a few big pieces, so each frame draws 36–59% less (Frost Peak went from 670 draw calls to 274). **Fast graphics** now really lightens the load (lower resolution and no shadows, not just no glow), and the game switches to it by itself if your device struggles mid-race |
 | **v4.3** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a race) and says "✨ Updated to the newest version!" |
 | **v4.2** | **Real JavaScript project:** the game code now lives in `js/game.js` and the styling in `css/style.css` instead of being packed into one HTML page, plus a Python release tool (`tools/release.py`). Same game, it just loads from proper files |
 | **v4.1** | Phone polish: results and pause screens always fit (no more cut-off Race Again button on a sideways phone), touch buttons keep their spacing when they shrink (Brake no longer covers ▶ on small phones), compact HUD on short screens, menu logo fits on phones |
