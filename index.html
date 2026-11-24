@@ -67,13 +67,13 @@
   #touch { position: fixed; inset: 0; z-index: 11; pointer-events: none; }
   .tb { position: absolute; pointer-events: auto; border-radius: 50%; border: 2px solid rgba(255,255,255,.28); background: rgba(10,11,16,.45); display: grid; place-items: center; font: 900 13px system-ui; letter-spacing: .06em; color: #fff; touch-action: none; }
   .tb.on { background: rgba(255,210,63,.35); border-color: var(--bolt); }
-  #tL { left: max(18px, env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 34px; }
-  #tR { left: calc(max(18px, env(safe-area-inset-left)) + 106px); bottom: calc(26px + env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 34px; }
-  #tBrake { right: calc(max(18px, env(safe-area-inset-right)) + 182px); bottom: calc(24px + env(safe-area-inset-bottom)); width: 74px; height: 74px; }
-  #tDrift { right: calc(max(18px, env(safe-area-inset-right)) + 92px); bottom: calc(110px + env(safe-area-inset-bottom)); width: 80px; height: 80px; }
-  #tNitro { right: max(18px, env(safe-area-inset-right)); bottom: calc(190px + env(safe-area-inset-bottom)); width: 80px; height: 80px; border-color: var(--cy); }
-  #tGas { right: max(18px, env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom)); width: 86px; height: 86px; }
-  #tItem { right: calc(max(18px, env(safe-area-inset-right)) + 100px); bottom: calc(200px + env(safe-area-inset-bottom)); width: 72px; height: 72px; border-color: #ff4f6d; font-size: 26px; }
+  #tL { left: max(18px, env(safe-area-inset-left)); bottom: calc(26px * var(--s, 1) + env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 34px; }
+  #tR { left: calc(max(18px, env(safe-area-inset-left)) + 106px * var(--s, 1)); bottom: calc(26px * var(--s, 1) + env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 34px; }
+  #tBrake { right: calc(max(18px, env(safe-area-inset-right)) + 182px * var(--s, 1)); bottom: calc(24px * var(--s, 1) + env(safe-area-inset-bottom)); width: 74px; height: 74px; }
+  #tDrift { right: calc(max(18px, env(safe-area-inset-right)) + 92px * var(--s, 1)); bottom: calc(110px * var(--s, 1) + env(safe-area-inset-bottom)); width: 80px; height: 80px; }
+  #tNitro { right: max(18px, env(safe-area-inset-right)); bottom: calc(190px * var(--s, 1) + env(safe-area-inset-bottom)); width: 80px; height: 80px; border-color: var(--cy); }
+  #tGas { right: max(18px, env(safe-area-inset-right)); bottom: calc(96px * var(--s, 1) + env(safe-area-inset-bottom)); width: 86px; height: 86px; }
+  #tItem { right: calc(max(18px, env(safe-area-inset-right)) + 100px * var(--s, 1)); bottom: calc(200px * var(--s, 1) + env(safe-area-inset-bottom)); width: 72px; height: 72px; border-color: #ff4f6d; font-size: 26px; }
   #hItem { left: 14px; top: calc(max(12px, env(safe-area-inset-top)) + 120px); width: 64px; height: 64px; display: grid; place-items: center; font-size: 32px; padding: 0; }
   #hItem small { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font: 700 10px system-ui; letter-spacing: .08em; opacity: .8; }
   #drift { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); font: 900 26px/1 "Arial Black", system-ui; color: #ffd23f; text-shadow: 0 3px 14px rgba(0,0,0,.7); white-space: nowrap; }
@@ -87,6 +87,12 @@
   /* overlays */
   .ov { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(6,7,11,.72); backdrop-filter: blur(6px); padding: 16px; }
   .ov .card { width: min(460px, 100%); }
+  @media (max-height: 520px) { #mini { width: 100px; height: 100px; } #hPos { transform: scale(.8); transform-origin: top left; } #hSpeed { transform: scale(.8); transform-origin: top right; } body.touch #hSpeed { top: calc(max(12px, env(safe-area-inset-top)) + 108px); }
+    #hItem { top: calc(max(12px, env(safe-area-inset-top)) + 104px); width: 54px; height: 54px; font-size: 26px; } #drift { bottom: auto; top: 58%; } }
+  .ov .card { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-height: 540px) { .res { grid-template-columns: 1fr 1fr; gap: 4px 8px; margin: 6px 0 10px; } .res div { padding: 4px 8px; font-size: 13px; } #resOv .card { width: min(640px, 100%); } #resOv .card .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } #resOv .go { padding: 12px; font-size: 16px; } }
+  @media (max-height: 540px) and (orientation: landscape) { #menu { grid-template-columns: minmax(0, 1fr) minmax(0, 470px); } #menu .logo { font-size: clamp(34px, 5.2vw, 52px); } #menu .left { padding: max(16px, env(safe-area-inset-top)) 20px 16px max(20px, env(safe-area-inset-left)); } }
+  #menu .by { flex-wrap: wrap; row-gap: 2px; } #menu .by .coins { white-space: nowrap; }
   .inp { width: 100%; padding: 13px 14px; margin: 0 0 8px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: var(--ink); font: 600 16px system-ui; }
   .inp:focus { outline: 2px solid var(--bolt); }
   #studioSplash { position: fixed; inset: 0; z-index: 9999; background: #11121a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .55s ease; }
@@ -853,7 +859,7 @@ const errText = e => ERRS[e && e.code] || ('Something went wrong' + (e && e.code
 function fitTouch() {
   const vv = window.visualViewport, w = vv ? vv.width : innerWidth, h = vv ? vv.height : innerHeight;
   for (const id of ['touch', 'hud']) { const el = $(id); if (vv) { el.style.inset = 'auto'; el.style.left = vv.offsetLeft + 'px'; el.style.top = vv.offsetTop + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px'; } }
-  $('touch').style.setProperty('--s', clamp(Math.min(w / 1000, h / 640), 0.62, 1) * SAVE.set.tsize);
+  $('touch').style.setProperty('--s', clamp(Math.min(w / 1000, h / 640), 0.68, 1) * SAVE.set.tsize);
 }
 if (window.visualViewport) { visualViewport.addEventListener('resize', fitTouch); visualViewport.addEventListener('scroll', fitTouch); }
 addEventListener('resize', fitTouch); addEventListener('orientationchange', () => setTimeout(fitTouch, 300));
